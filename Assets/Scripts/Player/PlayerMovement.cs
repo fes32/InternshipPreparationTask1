@@ -2,43 +2,57 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(Player))]
+
 public class PlayerMovement : MonoBehaviour
 {
-    [SerializeField] private float _jumpForce;
     [SerializeField] private float _speed;
+    [SerializeField] private float _jumpForce;
 
     private Rigidbody _rigidbody;
-    private bool _isGrounded = true;
-    private Vector3 _normalizeDirection= new Vector3(1,0,0);
-    private Vector3 _gravity = new Vector3(0, -9.8f, 0);
+    private Player _player;
+    private bool _grounded=false;
 
-    private void OnEnable()
+    private void Start()
     {
         _rigidbody = GetComponent<Rigidbody>();
     }
 
-    private void Update()
+    private void OnCollisionEnter(Collision collision)
     {
-        Move();
-
-        if (Input.GetKey(KeyCode.Space) & _isGrounded)
-            Jump();    
+        if (collision.gameObject.GetComponent<Ground>())
+            _grounded = true;
     }
 
-    private void Move()
+    private void OnEnable()
     {
-        _rigidbody.velocity = new Vector3(_speed, _rigidbody.velocity.y);
+        _player = GetComponent<Player>();
+        _player.Dying += OnPlayerDied;
+    }
+
+    private void OnDisable()
+    {
+        _player.Dying -= OnPlayerDied;
+    }
+
+    private void Update()
+    {
+        _rigidbody.velocity = new Vector3(_speed, _rigidbody.velocity.y, 0);
+        if (Input.GetKey(KeyCode.Space)&&_grounded)
+        {
+            Jump();
+        }
+    }
+
+    private void OnPlayerDied()
+    {
+        _speed = 0;
     }
 
     private void Jump()
     {
-        _rigidbody.AddForce(Vector3.up * _jumpForce);
-        _isGrounded = false;
+        _rigidbody.AddForce(Vector2.up * _jumpForce);
+        _grounded = false;
     }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.GetComponent<Ground>())    
-            _isGrounded = true;       
-    }
-} 
+}
